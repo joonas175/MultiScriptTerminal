@@ -25,23 +25,29 @@ export const startTerminal = (options: TerminalOptions = defaultOptions) => {
       throw 'No scripts to run, exiting...';
     }
 
-    for(const script of scripts) {
+    for (const script of scripts) {
       const childProcess = new TerminalProcess(script);
       state.processes.push(childProcess);
+    }
+
+    const stdinRawListener = (buf: Buffer) => {
+      const char = buf.toString();
+      if(char === 'q') {
+        process.exit();
+      } else {
+        console.log(char);
+      }
+    }
+
+    const stdinInputListener = (buf: Buffer) => {
+      
     }
 
     const decoder = new TextDecoder();
 
     process.stdin.setRawMode(true);
 
-    process.stdin.on('data', (asd) => {
-      const char = asd.toString('utf-8');
-      if(char === 'q') {
-        process.exit();
-      } else {
-        console.log(char);
-      }
-    })
+    process.stdin.on('data', stdinRawListener)
 
   } catch(e) {
     state.status = 'error';

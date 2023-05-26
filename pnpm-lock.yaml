@@ -1,6 +1,9 @@
 lockfileVersion: '6.0'
 
 dependencies:
+  '@tsconfig/node16':
+    specifier: ^1.0.4
+    version: 1.0.4
   '@types/node':
     specifier: ^20.2.3
     version: 20.2.3
