@@ -3,27 +3,29 @@ import { ChildProcessWithoutNullStreams, spawn } from "child_process";
 import { ChildProcessStatus } from "../types/terminalProcess";
 import { resolve } from "path";
 import { TextDecoder } from "util";
+import { Log } from "./Log";
 
-export class TerminalProcess {
+export class TerminalScript {
+
+  name: string;
 
   childProcess: ChildProcessWithoutNullStreams;
 
   status: ChildProcessStatus = 'off';
 
-  log: string = '';
-
-  decoder = new TextDecoder();
-
+  processLog: Log;
 
   constructor(script: Script) {
     const { command, workingDir } = script;
 
     const path = workingDir ? resolve(workingDir) : process.cwd();
 
-    console.log('cwd: ' + path);
-    console.log('command: ' + command)
+    this.name = script.name ?? `"${script.command}"`
 
-    this.decoder = new TextDecoder();
+    console.log('Init script: ' + this.name)
+    console.log('command: ' + command)
+    console.log('cwd: ' + path);
+    console.log();
 
     const childProcess = spawn(command, {
       cwd: path,
@@ -36,15 +38,16 @@ export class TerminalProcess {
 
     this.childProcess = childProcess;
 
+    this.processLog = new Log();
+
 
     childProcess.stdout.on('data', this.stdOutListener);
 
     childProcess.stderr.on('data', this.stdOutListener);
   }
 
-  stdOutListener = (chunk: Int16Array) => {
-    const decoded = this.decoder.decode(chunk);
-    this.log += decoded;
+  stdOutListener = (chunk: Buffer) => {
+    this.processLog.addBufferToLog(chunk);
   }
 
 }

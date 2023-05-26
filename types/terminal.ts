@@ -1,6 +1,8 @@
-import { TerminalProcess } from "../classes/TerminalProcess";
+import { Log } from "../classes/Log";
+import { TerminalScript } from "../classes/TerminalScript";
 
 export interface Script {
+  name?: string,
   command: string,
   workingDir?: string,
 }
@@ -9,9 +11,14 @@ export interface TerminalOptions {
   scripts?: Script[]
 }
 
-export type TerminalStatus = 'off' | 'init' | 'running' | 'error';
+export type TerminalStatus = 'off' | 'init' | 'running' | 'error' | 'exited';
 
 export interface TerminalState {
   status: TerminalStatus
-  processes: TerminalProcess[]
+  scripts: TerminalScript[]
+  selectedScript: number
+  selectedLog: Log | null
+  lastRender: number
+  mainProcessLog: Log
 }
+
