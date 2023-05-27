@@ -16,7 +16,8 @@ export const startTerminal = (options: TerminalOptions = defaultOptions) => {
     selectedScript: 0,
     selectedLog: null,
     lastRender: 0,
-    mainProcessLog: new Log()
+    mainProcessLog: new Log(),
+    stateChangedListener: null,
   }
 
   try {
@@ -24,8 +25,9 @@ export const startTerminal = (options: TerminalOptions = defaultOptions) => {
       set(target, p: keyof TerminalState, value) {
 
         Reflect.set(target, p, value);
-          //render();
-        target.lastRender = performance.now();
+        if(target.stateChangedListener) {
+          target.stateChangedListener(p);
+        }
         
         return true;
       },
@@ -90,12 +92,29 @@ export const startTerminal = (options: TerminalOptions = defaultOptions) => {
       }
       await readline.commit();
     }
-
+    
+    let rendering = false;
     const render = async () => {
+      if(rendering) return;
+
+      rendering = true;
+
       await clearScreen();
       const { selectedScript } = state;
       if(selectedScript >= -1) {
         await renderLog(selectedScript === -1 ? state.mainProcessLog : state.scripts[selectedScript].processLog);
+      }
+
+      _state.lastRender = performance.now();
+
+      rendering = false;
+    }
+    
+    const setLogListeners = (logIdxs: number[]) => {
+      state.mainProcessLog.eventListener = logIdxs.includes(-1) ? render : null;
+      for(const _idx in state.scripts) {
+        const idx = parseInt(_idx);
+        state.scripts[idx].processLog.eventListener = logIdxs.includes(idx) ? render : null;
       }
     }
 
@@ -105,7 +124,6 @@ export const startTerminal = (options: TerminalOptions = defaultOptions) => {
       if(char === 'q' || char === '\u0003') {
         process.exit();
       } else if(!isNaN(num)) {
-        const prevIndex = state.selectedScript;
         const scriptIndex = num - 1;
         if(scriptIndex < state.scripts.length) {
           state.selectedScript = scriptIndex;
@@ -115,6 +133,8 @@ export const startTerminal = (options: TerminalOptions = defaultOptions) => {
           } else {
             state.selectedLog === state.scripts[scriptIndex].processLog;
           }
+
+          setLogListeners([scriptIndex]);
           
           scriptIndex === -1 
             ? console.log("switched to main process")
@@ -146,7 +166,6 @@ export const startTerminal = (options: TerminalOptions = defaultOptions) => {
       } else {
         console.log(JSON.stringify(buf));
       }
-      render();
     }
 
     const stdinInputListener = (buf: Buffer) => {
@@ -162,14 +181,16 @@ export const startTerminal = (options: TerminalOptions = defaultOptions) => {
           }
         }
       }
-      render();
     }
 
     process.stdin.setRawMode(true);
 
     process.stdin.on('data', (buf: Buffer) => {
       process.stdin.isRaw ? stdinRawListener(buf) : stdinInputListener(buf);
-    })
+    });
+
+    state.stateChangedListener = render;
+    setLogListeners([0]);
 
     _state.status = 'running';
     render();

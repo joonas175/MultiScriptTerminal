@@ -13,6 +13,8 @@ export interface TerminalOptions {
 
 export type TerminalStatus = 'off' | 'init' | 'running' | 'error' | 'exited';
 
+export type TerminalStateListener = (key: keyof TerminalState) => void;
+
 export interface TerminalState {
   status: TerminalStatus
   scripts: TerminalScript[]
@@ -20,5 +22,6 @@ export interface TerminalState {
   selectedLog: Log | null
   lastRender: number
   mainProcessLog: Log
+  stateChangedListener: TerminalStateListener | null
 }
 

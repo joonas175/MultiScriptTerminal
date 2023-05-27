@@ -14,7 +14,7 @@ export class Log {
   eventListener: LogEventListener | null = null;
 
   constructor() {
-
+    
   }
 
   addBufferToLog(chunk: Buffer) {
@@ -28,7 +28,8 @@ export class Log {
     this.logContent.push(...lines);
     if(atEnd) {
       this.endIndex += lines.length;
-    } 
+      this.eventListener && this.eventListener('log');
+    }
   }
 
   getLines(count: number) {
@@ -38,21 +39,24 @@ export class Log {
   goUp() {
     if(this.endIndex >= 0) {
       this.endIndex--;
+      this.eventListener && this.eventListener('offset');
     }
   }
 
   goDown() {
     if(this.endIndex < this.logContent.length - 1) {
       this.endIndex++;
+      this.eventListener && this.eventListener('offset');
     }
   }
 
   goToEnd() {
     this.endIndex = this.logContent.length - 1;
+    this.eventListener && this.eventListener('offset');
   }
 
   goToStart() {
     this.endIndex = 0;
+    this.eventListener && this.eventListener('offset');
   }
-
 }
