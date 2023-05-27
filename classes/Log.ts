@@ -13,6 +13,8 @@ export class Log {
 
   eventListener: LogEventListener | null = null;
 
+  lastCount: number = 0;
+
   constructor() {
     
   }
@@ -33,11 +35,12 @@ export class Log {
   }
 
   getLines(count: number) {
+    this.lastCount = count;
     return this.logContent.slice(Math.max(0, this.endIndex - count), Math.max(count, this.endIndex));
   }
 
   goUp() {
-    if(this.endIndex >= 0) {
+    if(this.endIndex - this.lastCount > 0) {
       this.endIndex--;
       this.eventListener && this.eventListener('offset');
     }

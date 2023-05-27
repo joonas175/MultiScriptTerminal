@@ -23,5 +23,6 @@ export interface TerminalState {
   lastRender: number
   mainProcessLog: Log
   stateChangedListener: TerminalStateListener | null
+  debug: boolean
 }
 

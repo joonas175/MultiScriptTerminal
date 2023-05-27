@@ -2,6 +2,7 @@ import { Log } from "./classes/Log";
 import { TerminalScript } from "./classes/TerminalScript";
 import { TerminalOptions, TerminalState } from "./types/terminal";
 import { Readline } from "readline/promises";
+import { green } from "./util/stringStyles";
 
 
 export const defaultOptions: TerminalOptions = {
@@ -18,6 +19,7 @@ export const startTerminal = (options: TerminalOptions = defaultOptions) => {
     lastRender: 0,
     mainProcessLog: new Log(),
     stateChangedListener: null,
+    debug: false,
   }
 
   try {
@@ -75,9 +77,7 @@ export const startTerminal = (options: TerminalOptions = defaultOptions) => {
       await readline.commit();
     }
 
-    const renderLog = async (processLog: Log, lines?: number) => {
-      lines = lines ?? process.stdout.rows - 5;
-
+    const renderLog = async (processLog: Log, lines: number) => {
       const log = processLog.getLines(lines);
 
       const endIndex = log.length - 1;
@@ -92,17 +92,50 @@ export const startTerminal = (options: TerminalOptions = defaultOptions) => {
       }
       await readline.commit();
     }
-    
+
+    const renderHeader = () : number => {
+      let headerStr = '';
+      const { scripts, selectedScript } = state;
+      for(const _idx in scripts) {
+        const idx = parseInt(_idx);
+        const str = `[${1 + idx}: ${scripts[idx].name}]  `;
+        headerStr += selectedScript === idx ? green(str) : str;
+      }
+
+      headerStr += selectedScript === -1 ? green('[0: main process]') : '[0: main process]';
+      headerStr += '\n';
+      if(state.debug) {
+        let debugStr = `renderTime ${state.lastRender}`;
+        headerStr += debugStr.padStart(process.stdout.columns);
+      }
+      headerStr += '-'.repeat(process.stdout.columns);
+
+      process.stdout.write(headerStr);
+
+      return headerStr.split('\n').length;
+    }
+
     let rendering = false;
     const render = async () => {
       if(rendering) return;
 
       rendering = true;
 
+      const maxLines = process.stdout.rows;
+      let rowsWritten = 0;
+
       await clearScreen();
       const { selectedScript } = state;
+
+      rowsWritten = await renderHeader();
+
       if(selectedScript >= -1) {
-        await renderLog(selectedScript === -1 ? state.mainProcessLog : state.scripts[selectedScript].processLog);
+        await renderLog(
+          selectedScript === -1 ? 
+          state.mainProcessLog : 
+          state.scripts[selectedScript].processLog,
+          maxLines - 5
+          );
       }
 
       _state.lastRender = performance.now();
@@ -123,15 +156,17 @@ export const startTerminal = (options: TerminalOptions = defaultOptions) => {
       const num = parseInt(char);
       if(char === 'q' || char === '\u0003') {
         process.exit();
+      } else if(char === 'd') {
+        state.debug = !state.debug;
       } else if(!isNaN(num)) {
         const scriptIndex = num - 1;
         if(scriptIndex < state.scripts.length) {
           state.selectedScript = scriptIndex;
 
           if(scriptIndex === -1) {
-            state.selectedLog === state.mainProcessLog;
+            state.selectedLog = state.mainProcessLog;
           } else {
-            state.selectedLog === state.scripts[scriptIndex].processLog;
+            state.selectedLog = state.scripts[scriptIndex].processLog;
           }
 
           setLogListeners([scriptIndex]);
@@ -170,7 +205,6 @@ export const startTerminal = (options: TerminalOptions = defaultOptions) => {
 
     const stdinInputListener = (buf: Buffer) => {
       const strIn = buf.toString();
-      console.log(strIn);
       if(strIn.startsWith("/")) {
         const commands = strIn.replaceAll("/", "").trim().split(" ");
         for(const command of commands) {
@@ -181,6 +215,7 @@ export const startTerminal = (options: TerminalOptions = defaultOptions) => {
           }
         }
       }
+      render();
     }
 
     process.stdin.setRawMode(true);
