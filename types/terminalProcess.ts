@@ -1,2 +1,10 @@
+import { Log } from "../classes/Log";
 
-export type ChildProcessStatus = 'off' | 'running' | 'error' | 'exited';
+export type ProcessStatus = 'off' | 'running' | 'error' | 'exited';
+
+export interface TerminalProcessRenderInfo {
+  name: string;
+  status: ProcessStatus;
+  hasErr: boolean;
+  processLog: Log;
+}

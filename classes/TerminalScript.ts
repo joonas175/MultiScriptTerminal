@@ -1,34 +1,45 @@
 import { Script } from "../types/terminal";
 import { ChildProcessWithoutNullStreams, spawn } from "child_process";
-import { ChildProcessStatus } from "../types/terminalProcess";
+import { ProcessStatus, TerminalProcessRenderInfo } from "../types/terminalProcess";
 import { resolve } from "path";
-import { TextDecoder } from "util";
 import { Log } from "./Log";
 
-export class TerminalScript {
+export class TerminalScript implements TerminalProcessRenderInfo {
 
   name: string;
 
-  childProcess: ChildProcessWithoutNullStreams;
+  path: string;
 
-  status: ChildProcessStatus = 'off';
+  command: string;
+
+  childProcess: ChildProcessWithoutNullStreams | null = null;
+
+  status: ProcessStatus = 'off';
 
   processLog: Log;
+
+  hasErr: boolean = false;
 
   constructor(script: Script) {
     const { command, workingDir } = script;
 
-    const path = workingDir ? resolve(workingDir) : process.cwd();
+    this.path = workingDir ? resolve(workingDir) : process.cwd();
 
     this.name = script.name ?? `"${script.command}"`
 
+    this.command = command;
+
+    this.processLog = new Log();
+  }
+
+  start() {
     console.log('Init script: ' + this.name)
-    console.log('command: ' + command)
-    console.log('cwd: ' + path);
+    console.log('command: ' + this.command)
+    console.log('cwd: ' + this.path);
     console.log();
 
-    const childProcess = spawn(command, {
-      cwd: path,
+    const childProcess = spawn(this.command, {
+      cwd: this.path,
       shell: true,
       env: {
         ...process.env,
@@ -38,15 +49,18 @@ export class TerminalScript {
 
     this.childProcess = childProcess;
 
-    this.processLog = new Log();
-
-
     childProcess.stdout.on('data', this.stdOutListener);
 
-    childProcess.stderr.on('data', this.stdOutListener);
+    childProcess.stderr.on('data', this.stdErrListener);
+  }
+
+  stdErrListener = (chunk: Buffer) => {
+    this.hasErr = true;
+    this.processLog.addBufferToLog(chunk);
   }
 
   stdOutListener = (chunk: Buffer) => {
+    this.hasErr = false;
     this.processLog.addBufferToLog(chunk);
   }
 

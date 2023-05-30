@@ -1,4 +1,4 @@
-import terminal from "./terminal";
+import { Terminal } from "./classes/Terminal";
 import { TerminalOptions } from "./types/terminal";
 
 const options: TerminalOptions = {
@@ -10,4 +10,6 @@ const options: TerminalOptions = {
   ]
 }
 
-terminal.startTerminal(options);
+//terminal.startTerminal(options);
+const terminal = new Terminal(options);
+terminal.start();

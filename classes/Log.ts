@@ -1,7 +1,7 @@
 
-type LogEventType = 'log' |  'offset';
+export type LogEventType = 'log' |  'offset';
 
-type LogEventListener = (event: LogEventType) => void;
+export type LogEventListener = (event: LogEventType) => void;
 
 export class Log {
 
