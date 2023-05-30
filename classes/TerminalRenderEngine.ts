@@ -15,7 +15,7 @@ export class TerminalRenderEngine {
 
   rendering = false;
 
-  lastRender: number = 0;
+  renderTimes: number[] = [];
 
   next: Function[]= [];
 
@@ -31,6 +31,8 @@ export class TerminalRenderEngine {
       return;
     }
 
+    const startTime = performance.now();
+
     this.rendering = true;
 
     const maxLines = process.stdout.rows;
@@ -45,7 +47,9 @@ export class TerminalRenderEngine {
       maxLines - 5
     );
     
-    this.lastRender = performance.now();
+    const endTime = performance.now();
+    const renderTimeInMs = endTime - startTime;
+    this.addToRenderTimes(renderTimeInMs);
 
     this.rendering = false;
     this.next.shift()?.();
@@ -61,7 +65,7 @@ export class TerminalRenderEngine {
 
     headerStr += '\n';
     if(debug) {
-      let debugStr = `renderTime ${this.lastRender}`;
+      let debugStr = `avg fps ${this.getFps().toFixed(0)}`;
       headerStr += debugStr.padStart(process.stdout.columns);
     }
     headerStr += '-'.repeat(process.stdout.columns);
@@ -87,5 +91,20 @@ export class TerminalRenderEngine {
     }
     process.stdout.write(logStr);
     await readline.commit();
+  }
+
+  addToRenderTimes(time: number) {
+    this.renderTimes.push(time);
+    if(this.renderTimes.length > 10) {
+      this.renderTimes.shift();
+    }
+  }
+
+  getFps() {
+    let acc = 0;
+    for(const time of this.renderTimes) {
+      acc += time;
+    }
+    return 1000 / (acc / this.renderTimes.length);
   }
 }
