@@ -167,7 +167,7 @@ export class Terminal {
 
   getSelectedLog = () : Log | undefined => {
     const { state, scripts } = this;
-    return state.selectedScript === 0 ? state.processLog : scripts[state.selectedScript].processLog;
+    return state.selectedScript === 0 ? state.processLog : scripts[state.selectedScript]?.processLog;
   }
 
 }
