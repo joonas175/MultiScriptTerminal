@@ -17,14 +17,19 @@ export class TerminalRenderEngine {
 
   lastRender: number = 0;
 
+  next: Function[]= [];
+
   async clearScreen() {
     readline.cursorTo(0, 0);
     readline.clearScreenDown();
     await readline.commit();
-  }  
+  }
 
   renderLog = async (index: number, debug: boolean) => {
-    if(this.rendering) return;
+    if(this.rendering) {
+      this.next.push(() => this.renderLog(index, debug));
+      return;
+    }
 
     this.rendering = true;
 
@@ -43,6 +48,7 @@ export class TerminalRenderEngine {
     this.lastRender = performance.now();
 
     this.rendering = false;
+    this.next.shift()?.();
   }
 
   renderHeader = (index: number, debug: boolean) : number => {
