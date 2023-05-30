@@ -10,6 +10,5 @@ const options: TerminalOptions = {
   ]
 }
 
-//terminal.startTerminal(options);
 const terminal = new Terminal(options);
 terminal.start();
