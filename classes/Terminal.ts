@@ -2,7 +2,7 @@ import { Script } from "../types/terminal";
 import { ProcessStatus, TerminalProcessRenderInfo } from "../types/terminalProcess";
 import { Log, LogEventType } from "./Log";
 import { TerminalRenderEngine } from "./TerminalRenderEngine";
-import { TerminalScript } from "./TerminalScript";
+import { TerminalScript, TerminalScriptEventListener } from "./TerminalScript";
 
 
 export type TerminalStateListener = (key: keyof TerminalState) => void;
@@ -61,15 +61,16 @@ export class Terminal {
 
     for (const index in scripts) {
       const script = scripts[index];
-      const terminalScript = new TerminalScript(script);
-      terminalScript.processLog.eventListener = (event: LogEventType) => {
-        this.logListener(event, parseInt(index) + 1);
+      
+      const listener: TerminalScriptEventListener = (event) => {
+        this.eventHandler(event, parseInt(index) + 1);
       }
+      const terminalScript = new TerminalScript(script, listener);
       this.scripts.push(terminalScript);
     }
 
     this.state.processLog.eventListener = (event: LogEventType) => {
-      this.logListener(event, 0);
+      this.eventHandler(event, 0);
     }
 
     this.renderEngine = new TerminalRenderEngine([this.state, ...this.scripts]);
@@ -103,8 +104,10 @@ export class Terminal {
     }
   }
 
-  logListener = (event: LogEventType, scriptIndex: number) => {
+  eventHandler = (event: LogEventType | ProcessStatus, scriptIndex: number) => {
     if(this.state.selectedScript === scriptIndex) {
+      this.render();
+    } else if(event === 'error' || event === 'exited') {
       this.render();
     }
   }
