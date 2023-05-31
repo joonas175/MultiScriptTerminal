@@ -36,6 +36,7 @@ export class Terminal {
     debug: false,
     name: 'Main Process',
     hasErr: false,
+    command: process.argv[0],
   }, {
     set: (target, p: keyof TerminalState, value) => {
       Reflect.set(target, p, value);

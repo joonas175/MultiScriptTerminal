@@ -69,13 +69,23 @@ export class TerminalScript implements TerminalProcessRenderInfo {
     });
   }
 
+  logSinceError = 0;
+
   stdErrListener = (chunk: Buffer) => {
-    this.hasErr = true;
+    this.logSinceError = 0;
+    if(this.status !== 'error') {
+      this.status = 'error';
+      this.eventListener('error');
+    }
     this.processLog.addBufferToLog(chunk);
   }
 
-  stdOutListener = (chunk: Buffer) => {
-    this.hasErr = false;
+  stdOutListener = (chunk: Buffer) => { 
+    if(this.status !== 'running') {
+      this.status = 'running';
+      this.eventListener('running');
+    }
+    this.logSinceError++;
     this.processLog.addBufferToLog(chunk);
   }
 

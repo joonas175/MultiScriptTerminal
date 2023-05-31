@@ -1,7 +1,6 @@
 import { Readline } from "readline/promises";
-import { green } from "../util/stringStyles";
-import { TerminalScript } from "./TerminalScript";
-import { TerminalProcessRenderInfo } from "../types/terminalProcess";
+import { ColorFunction, boldUnderline, darkGrayBg, green, lightGray, red, reset, underLine } from "../util/stringStyles";
+import { ProcessStatus, TerminalProcessRenderInfo } from "../types/terminalProcess";
 import { Log } from "./Log";
 const readline = new Readline(process.stdout, {autoCommit: false});
 
@@ -55,18 +54,29 @@ export class TerminalRenderEngine {
     this.next.shift()?.();
   }
 
+  statusToColor: Record<ProcessStatus, ColorFunction> = {
+    off: lightGray,
+    running: reset,
+    error: red,
+    exited: green,
+  }
+
   renderHeader = (index: number, debug: boolean) : number => {
-    let headerStr = '';
+    const headerStrings: string[] = [];
     for(const _idx in this.scripts) {
       const idx = parseInt(_idx);
-      const str = `[${idx}: ${this.scripts[idx].name}]  `;
-      headerStr += index === idx ? green(str) : str;
+      let str = `[${idx}: ${this.scripts[idx].name}]`;
+      str = this.statusToColor[this.scripts[idx].status](str);
+      headerStrings.push(index === idx ? darkGrayBg(str) : str);
     }
+
+    let headerStr = headerStrings.join(" ");
 
     headerStr += '\n';
     if(debug) {
-      let debugStr = `avg fps ${this.getFps().toFixed(0)}`;
-      headerStr += debugStr.padStart(process.stdout.columns);
+      let debugStr = 'cmd: ' + this.scripts[index].command;
+      debugStr += `avg fps ${this.getFps().toFixed(0)}`.padStart(process.stdout.columns - debugStr.length);
+      headerStr += debugStr + "\n";
     }
     headerStr += '-'.repeat(process.stdout.columns);
 
