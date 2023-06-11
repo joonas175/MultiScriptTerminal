@@ -43,7 +43,7 @@ export class TerminalRenderEngine {
 
     await this._renderLog(
       this.scripts[index].processLog,
-      maxLines - 5
+      maxLines - rowsWritten - 3
     );
     
     const endTime = performance.now();
@@ -70,7 +70,20 @@ export class TerminalRenderEngine {
       headerStrings.push(index === idx ? darkGrayBg(str) : str);
     }
 
-    let headerStr = headerStrings.join(" ");
+    headerStrings.push(headerStrings.shift()!);
+    const columns = process.stdout.columns;
+    let lineLength = 0;
+    let headerStr = "";
+    while(headerStrings.length > 0) {
+      const next = headerStrings.shift();
+      if(lineLength + next!.length > columns) {
+        headerStr += `\n${next} `;
+        lineLength = next!.length + 1;
+      } else {
+        headerStr += `${next} `;
+        lineLength += next!.length + 1;
+      }
+    }
 
     headerStr += '\n';
     if(debug) {
@@ -93,7 +106,8 @@ export class TerminalRenderEngine {
     let index = 0;
     while(index <= endIndex) {
       logStr += `${log[index]}\n`;
-      index++;
+      const lines = Math.ceil(log[index].length / process.stdout.columns);
+      index += lines || 1;
     }
     while(index <= lines) {
       logStr += '\n';
