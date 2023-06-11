@@ -103,6 +103,7 @@ export class Terminal {
         this.state.processLog.addStringToLog(str);
       }
     }
+    process.stdout.on('resize', this.render);
   }
 
   eventHandler = (event: LogEventType | ProcessStatus, scriptIndex: number) => {
